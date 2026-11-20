@@ -232,6 +232,49 @@ A vector database or advanced RAG implementation is not mandatory.
 
 ---
 
+## Module 2b: ID & Insurance + Hospital Kit (scope change, 20 Nov 2026)
+
+Hospitals ask for non-medical documents at admission (photo ID, insurance card or policy, TPA details). Users keep these in one place and share them quickly when needed.
+
+### Separate Section
+A sidebar item **"ID & Insurance"**, separate from Medical Documents, because these documents follow different rules:
+
+| | Medical documents | ID & insurance documents |
+|---|---|---|
+| Examples | Reports, prescriptions | Aadhaar, PAN, voter ID, passport, driving licence, insurance card/policy |
+| AI extraction | Yes, with user review | **Insurance only.** Identity documents are never sent to AI |
+| Natural-language search | Yes | Filter by type only |
+
+It reuses the document upload pipeline (private storage, file-type checks, statuses), with a `kind` column on documents: `medical` | `identity` | `insurance`.
+
+### Insurance Details
+Stored with the file (AI can prefill these from a policy PDF, using the same review-and-confirm flow):
+- Insurer, policy number, member/card ID, policy holder
+- **TPA name and TPA helpline** (one-tap call)
+- Sum insured, cover type (individual / family floater), valid until
+- **A family floater policy can be linked to several family profiles** (a policy-to-members link table), so it is uploaded once.
+- Optional insurance line on the emergency card: insurer + TPA helpline.
+- An "Expires in N days" badge (no reminders; reminders are out of scope).
+
+### Hospital Kit
+A "Prepare Hospital Kit" action (for the active family profile) where the user picks items: emergency card, masked Aadhaar, insurance card/policy, recent reports. Two ways to share:
+- **Secure link / QR (recommended):** expires (1 h / 24 h / 7 days), view-only, revocable, every opening logged. Built on emergency sharing.
+- **Send files directly** through the phone's share sheet (Web Share API, e.g. WhatsApp). Shows a warning that files sent this way can't be revoked. Cut this first if time runs short.
+
+### Security Rules for Identity Documents
+- Prompt users to upload a **masked Aadhaar** (provided by UIDAI, shows only the last 4 digits). Store only the last 4 digits as data, never the full Aadhaar number.
+- Identity documents are never sent to the AI provider.
+- Short-lived signed URLs; blurred previews until the user taps to view.
+- Never included in any share automatically; only added to a kit when the user ticks them.
+- Collect the minimum, with consent, in line with India's DPDP Act principles (not legal advice).
+
+### Deferred
+- DigiLocker integration (fetch verified Aadhaar/PAN; needs partner onboarding)
+- Watermarking shared copies ("Shared with City Hospital, 20 Nov 2026")
+- Insurance renewal reminders
+
+---
+
 ## Module 3: Emergency Center
 
 The Emergency Center provides quick access to important health information.
@@ -479,7 +522,7 @@ src/
 └── lib/             utils.js (cn, formatDate), constants.js (document statuses, categories)
 ```
 
-Planned additions: `src/lib/supabase/`, `src/lib/ai/`, `src/features/documents/`, `src/features/emergency/`, `src/features/ai/`, `src/app/api/`.
+Planned additions: `src/lib/supabase/`, `src/lib/ai/`, `src/features/documents/`, `src/features/id-insurance/`, `src/features/emergency/` (including Hospital Kit), `src/features/ai/`, `src/app/api/`, route `src/app/(dashboard)/id-insurance/`.
 
 **Temporary persistence:** `features/*/services/*-service.js` currently use localStorage (synthetic data only). Their async function signatures match the planned API, so only the service files change when Supabase arrives.
 
@@ -553,8 +596,9 @@ Avoid making the application look like a traditional hospital website.
 1. Overview
 2. My Health Profile
 3. Medical Documents
-4. Emergency Center
-5. Settings
+4. ID & Insurance
+5. Emergency Center
+6. Settings
 
 ## Dashboard Layout
 
@@ -704,13 +748,13 @@ Fix errors before moving to backend development.
 | 3 | Supabase setup | Database (`profiles` + `profile_id` FKs, RLS) and environment configuration |
 | 4 | Authentication | Login, signup, protected routes |
 | 5 | Health profile + family profiles | UI ✅ done early (localStorage); connect to Supabase |
-| 6 | Document upload | Secure upload and storage |
-| 7 | Document management | Preview, download, filters, delete |
+| 6 | Document upload | Secure upload and storage (medical, identity and insurance kinds) |
+| 7 | Document management | Preview, download, filters, delete; ID & Insurance page with insurance details |
 | 8 | AI extraction | Classification and metadata extraction |
 | 9 | AI verification | Review and confirmation workflow |
 | 10 | AI search | Natural-language metadata retrieval |
 | 11 | Emergency center | Emergency profile and contacts CRUD |
-| 12 | Emergency card | Read-only emergency information and sharing |
+| 12 | Emergency card + Hospital Kit | Read-only emergency information, secure sharing links/QR, Hospital Kit |
 | 13 | Quality and security | Loading, errors, retries, responsive and security review |
 | 14 | Testing and deployment | Deployed application |
 | 15 | Documentation and interview preparation | README, architecture explanation, demo |
@@ -765,6 +809,13 @@ Because MediVault handles sensitive personal health information, security must b
 - Revocation.
 - Access logging.
 - No automatic access to private documents.
+- Hospital Kit links follow the same rules; identity documents are included only when explicitly selected.
+
+## Identity Documents
+
+- Masked Aadhaar only; store at most the last 4 digits as data.
+- Never send identity documents to the AI provider.
+- Blurred previews until the user taps to view; short-lived signed URLs.
 
 ## Development Data
 
@@ -791,6 +842,9 @@ Never use real personal medical information in public demos.
 - [x] Health profile page (`/profile`): React Hook Form + Zod, tag inputs, medications/supplements rows, "no known allergies", live completion card (localStorage for now)
 - [x] Family profiles: header profile switcher, add-member dialog with consent, "managing records for…" banner, family management in Settings, health data stored per profile (localStorage for now)
 
+- [x] ID & Insurance page (`/id-insurance`): identity documents (masked number, blurred previews, never sent to AI), insurance policies (TPA one-tap call, expiry badge, family floater covering several profiles), file upload with real file-type checks, Hospital Kit with "Send files directly" (Web Share API, download fallback). Details in localStorage, files in IndexedDB for now
+- [x] Shared `Dialog` (native `<dialog>`) and `FilePicker` components
+
 ## Not yet verified
 
 - [ ] Manual click-through in a browser (desktop, tablet, mobile)
@@ -805,6 +859,9 @@ Never use real personal medical information in public demos.
 - [ ] Integrate AI extraction (Gemini) + wrong-person name check
 - [ ] Implement AI search
 - [ ] Implement emergency center (contacts, card per profile)
+- [ ] Move ID & Insurance from localStorage/IndexedDB to Supabase (tables + private storage)
+- [ ] Hospital Kit secure link / QR (needs server) and emergency card in the kit
+- [ ] Edit existing ID documents / insurance policies (currently add + delete only)
 - [ ] Implement emergency sharing
 - [ ] Test application
 - [ ] Deploy application

@@ -2,6 +2,7 @@
 // In Supabase this becomes the `profiles` table (id, owner_user_id, relationship, name),
 // and every health table references profile_id.
 import { deleteHealthProfile } from "@/features/profile/services/profile-service";
+import { removeProfileFromIdInsurance } from "@/features/id-insurance/services/id-insurance-service";
 import { familyMemberSchema } from "../schema";
 
 const PROFILES_KEY = "medivault:family-profiles";
@@ -61,6 +62,7 @@ export async function deleteFamilyProfile(id) {
   if (target.relationship === "self") throw new Error("Your own profile cannot be removed");
   writeProfiles(list.filter((p) => p.id !== id));
   await deleteHealthProfile(id);
+  await removeProfileFromIdInsurance(id);
 }
 
 export function getStoredActiveProfileId() {
