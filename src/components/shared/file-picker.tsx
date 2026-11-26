@@ -79,7 +79,7 @@ export function FilePicker({ id, value, onChange, max = 3, invalid }: FilePicker
               <button
                 type="button"
                 onClick={() => onChange(value.filter((_, i) => i !== index))}
-                className="rounded-full p-1 text-muted hover:bg-slate-100"
+                className="rounded-full p-1 text-muted hover:bg-slate-100 cursor-pointer"
                 aria-label={`Remove ${file.name}`}
               >
                 <X className="size-4" />

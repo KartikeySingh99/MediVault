@@ -18,7 +18,7 @@ export function Button({ variant = "primary", className, type = "button", ...pro
     <button
       type={type}
       className={cn(
-        "inline-flex min-h-10 items-center justify-center gap-2 rounded-xl px-4 text-sm font-medium transition-colors disabled:cursor-not-allowed",
+        "cursor-pointer inline-flex min-h-10 items-center justify-center gap-2 rounded-xl px-4 text-sm font-medium transition-colors disabled:cursor-not-allowed",
         VARIANTS[variant],
         className
       )}
