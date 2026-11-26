@@ -1,8 +1,12 @@
 import Link from "next/link";
 import { Menu, ShieldPlus } from "lucide-react";
 import { ProfileSwitcher } from "@/features/family/components/profile-switcher";
+import { logout } from "@/features/auth/actions";
 
 export function Header({ onMenuClick }: { onMenuClick: () => void }) {
+  const handleLogout = async() =>{
+    await logout();
+  }
   return (
     <header className="sticky top-0 z-20 flex h-16 items-center gap-2 border-b border-border bg-surface/90 px-4 backdrop-blur sm:px-6">
       <button
@@ -26,6 +30,7 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
         <ShieldPlus className="size-4" aria-hidden="true" />
         <span className="hidden sm:inline">Emergency</span>
       </Link>
+      <button type="button" onClick={handleLogout}>Logout</button>
     </header>
   );
 }
